@@ -1,0 +1,7 @@
+[run]
+branch = True
+
+[paths]
+airflow_queue_stats =
+    src/airflow_queue_stats/
+    .tox/**/airflow_queue_stats/

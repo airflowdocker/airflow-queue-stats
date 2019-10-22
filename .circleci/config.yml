@@ -1,0 +1,156 @@
+version: 2
+
+test-tox-env: &test-tox-env
+  run:
+    name: Run Tests
+    command: |
+      pip install tox
+      tox
+
+setup-env: &setup-env
+  run:
+    name: Setup Environment
+    command: |
+      echo "We good".
+
+jobs:
+
+  python-3.5-test:
+    docker:
+      - image: python:3.5.5
+    environment:
+      - TOXENV=py35
+    steps:
+      - checkout
+      - <<: *setup-env
+      - attach_workspace:
+          at: tmp
+      - <<: *test-tox-env
+      - persist_to_workspace:
+          root: tmp
+          paths:
+            - .coverage.py35
+
+  python-3.6-test:
+    docker:
+      - image: python:3.6.5
+    environment:
+      - TOXENV=py36
+    steps:
+      - checkout
+      - <<: *setup-env
+      - attach_workspace:
+          at: tmp
+      - <<: *test-tox-env
+      - persist_to_workspace:
+          root: tmp
+          paths:
+            - .coverage.py36
+
+  python-3.7-test:
+    docker:
+      - image: python:3.7.0
+    environment:
+      - TOXENV=py37
+    steps:
+      - checkout
+      - <<: *setup-env
+      - attach_workspace:
+          at: tmp
+      - <<: *test-tox-env
+      - persist_to_workspace:
+          root: tmp
+          paths:
+            - .coverage.py37
+
+  coverage:
+    docker:
+      - image: python:3.6.5
+    steps:
+      - checkout
+      - <<: *setup-env
+      - attach_workspace:
+          at: tmp
+      - run:
+          command: |
+            pip install tox
+            tox -e coverage
+      - run:
+          command: |
+            pip install codecov
+            codecov --file tmp/coverage.xml
+      - store_artifacts:
+          path: tmp
+
+  lint:
+    docker:
+      - image: python:3.6.5
+    steps:
+      - checkout
+      - run:
+          command: |
+            pip install tox
+            tox -e lint
+  prepare-release:
+    docker:
+      - image: circleci/python:3.7.2
+    steps:
+      - checkout
+      - run:
+          command: |
+            python -m venv .venv
+            source .venv/bin/activate
+            pip install releasely
+            git config --global user.email "huntcsg@gmail.com"
+            git config --global user.name "airflow-queue-stats-bot"
+            releasely prepare-release
+  pypi:
+    docker:
+      - image: python:3.6.5
+    steps:
+      - checkout
+      - <<: *setup-env
+      - attach_workspace:
+          at: tmp
+      - run:
+          command: |
+            pip install wheel twine
+            ./bin/build
+            ./bin/release-pypi
+            cp -r dist tmp/dist
+      - persist_to_workspace:
+          root: tmp
+          paths:
+            - dist
+
+workflows:
+  version: 2
+  continuous-delivery:
+    jobs:
+      - python-3.5-test
+      - python-3.6-test
+      - python-3.7-test
+      - coverage:
+          requires:
+            - python-3.5-test
+            - python-3.6-test
+            - python-3.7-test
+      - lint
+      - prepare-release:
+          requires:
+            - lint
+            - coverage
+          filters:
+            branches:
+              only:
+                - /^master$/
+                - /^release-v[0-9]+$/
+      - pypi:
+          requires:
+            - lint
+            - coverage
+          filters:
+            branches:
+              only:
+                # We only release on minor release branches
+                - /^release-v[0-9]+\.[0-9]+$/
