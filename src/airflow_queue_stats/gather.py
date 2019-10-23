@@ -5,18 +5,28 @@ from airflow.models.taskinstance import TaskInstance as TI
 from airflow.utils.db import provide_session
 from airflow.utils.state import State
 from airflow_queue_stats.models import Queue, Worker
-from sqlalchemy import func, or_, tuple_
+from sqlalchemy import and_, func, or_, tuple_
 
 
 @provide_session
 def get_backlog(session):
     backlog = dict(
         (
-            session.query(TI.queue, func.count())
-            .filter(or_(TI.queued_dttm.is_(None), TI.state.in_([State.QUEUED])))
-            .group_by(TI.queue)
-        ).all()
-    )
+            session.query(TI.queue, func.count()).filter(
+                or_(
+                    # This case is unfinished, but not yet queued, tasks
+                    # In some cases, the task state can be null,
+                    # which we will choose to ignore
+                    and_(
+                        TI.queued_dttm.is_(None),
+                        TI.state.isnot(None),
+                        TI.state.notin_(State.finished()),
+                    )
+                ),
+                TI.state.in_([State.QUEUED]),
+            )
+        ).group_by(TI.queue)
+    ).all()
 
     queues = []
     for queue, count in backlog.items():
