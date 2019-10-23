@@ -1,3 +1,15 @@
+.. _v0.1.3:
+
+-------------------
+v0.1.3 - 2019-10-23
+-------------------
+
+* Fixed the backlog calculation to ensure that tasks with a null state are not included in the backlog count.
+
+Authors:
+
+* Hunter Senft-Grupp
+
 .. _v0.1.2:
 
 -------------------
