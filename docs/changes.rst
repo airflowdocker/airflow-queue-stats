@@ -1,3 +1,15 @@
+.. _v0.1.4:
+
+-------------------
+v0.1.4 - 2019-10-24
+-------------------
+
+* Fixed additional bug in get_backlog implementation.
+
+Authors:
+
+* Hunter Senft-Grupp
+
 .. _v0.1.3:
 
 -------------------
