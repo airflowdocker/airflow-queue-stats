@@ -25,8 +25,10 @@ def get_backlog(session):
                 ),
                 TI.state.in_([State.QUEUED]),
             )
-        ).group_by(TI.queue)
-    ).all()
+        )
+        .group_by(TI.queue)
+        .all()
+    )
 
     queues = []
     for queue, count in backlog.items():
