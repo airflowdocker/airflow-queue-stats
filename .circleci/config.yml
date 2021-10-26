@@ -7,38 +7,15 @@ test-tox-env: &test-tox-env
       pip install tox
       tox
 
-setup-env: &setup-env
-  run:
-    name: Setup Environment
-    command: |
-      echo "We good".
-
 jobs:
-
-  python-3.5-test:
-    docker:
-      - image: python:3.5.5
-    environment:
-      - TOXENV=py35
-    steps:
-      - checkout
-      - <<: *setup-env
-      - attach_workspace:
-          at: tmp
-      - <<: *test-tox-env
-      - persist_to_workspace:
-          root: tmp
-          paths:
-            - .coverage.py35
 
   python-3.6-test:
     docker:
-      - image: python:3.6.5
+      - image: python:3.6.13
     environment:
       - TOXENV=py36
     steps:
       - checkout
-      - <<: *setup-env
       - attach_workspace:
           at: tmp
       - <<: *test-tox-env
@@ -49,12 +26,11 @@ jobs:
 
   python-3.7-test:
     docker:
-      - image: python:3.7.0
+      - image: python:3.7.10
     environment:
       - TOXENV=py37
     steps:
       - checkout
-      - <<: *setup-env
       - attach_workspace:
           at: tmp
       - <<: *test-tox-env
@@ -65,10 +41,9 @@ jobs:
 
   coverage:
     docker:
-      - image: python:3.6.5
+      - image: python:3.6.13
     steps:
       - checkout
-      - <<: *setup-env
       - attach_workspace:
           at: tmp
       - run:
@@ -84,7 +59,7 @@ jobs:
 
   lint:
     docker:
-      - image: python:3.6.5
+      - image: python:3.6.13
     steps:
       - checkout
       - run:
@@ -93,7 +68,7 @@ jobs:
             tox -e lint
   prepare-release:
     docker:
-      - image: circleci/python:3.7.2
+      - image: cimg/python:3.7.10
     steps:
       - checkout
       - run:
@@ -106,10 +81,9 @@ jobs:
             releasely prepare-release
   pypi:
     docker:
-      - image: python:3.6.5
+      - image: python:3.6.13
     steps:
       - checkout
-      - <<: *setup-env
       - attach_workspace:
           at: tmp
       - run:
@@ -127,12 +101,10 @@ workflows:
   version: 2
   continuous-delivery:
     jobs:
-      - python-3.5-test
       - python-3.6-test
       - python-3.7-test
       - coverage:
           requires:
-            - python-3.5-test
             - python-3.6-test
             - python-3.7-test
       - lint
